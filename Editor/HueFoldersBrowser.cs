@@ -17,6 +17,9 @@ namespace HueFolders
             if (EditorGUIUtility.isProSkin == false)
                 return;
             
+            if (EditorPrefs.GetBool(SettingsProvider.k_InTreeViewOnly) && _isTreeView() == false)
+                return;
+            
             var path = AssetDatabase.GUIDToAssetPath(guid);
             if (AssetDatabase.IsValidFolder(path) == false) 
                 return;

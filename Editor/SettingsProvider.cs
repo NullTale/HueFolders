@@ -12,9 +12,12 @@ namespace HueFolders
 {
     public class SettingsProvider : UnityEditor.SettingsProvider
     {
-        public const string k_PrefsFile     = nameof(HueFolders) + "_Prefs.json";
-        public const string k_PrefsPath     = "ProjectSettings\\" + k_PrefsFile;
-        public const int    k_GradientWidth = 16;
+        public const string k_PrefsFile      = nameof(HueFolders) + "_Prefs.json";
+        public const string k_PrefsPath      = "ProjectSettings\\" + k_PrefsFile;
+        public const string k_InTreeViewOnly = nameof(HueFolders) + "_InTreeViewOnly";
+        public const int    k_GradientWidth  = 16;
+        
+        public const bool k_InTreeViewOnly_Default = true;
         
         public static List<FolderData> s_FoldersData;
         public static Texture2D        s_Gradient;
@@ -96,7 +99,9 @@ namespace HueFolders
             }
             
             _updateGradient();
-            
+            if (EditorPrefs.HasKey(k_InTreeViewOnly))
+                EditorPrefs.SetBool(k_InTreeViewOnly, k_InTreeViewOnly_Default);
+
             EditorApplication.projectWindowItemOnGUI += HueFoldersBrowser.FolderColorization;
         }
 
@@ -104,11 +109,15 @@ namespace HueFolders
         {
             EditorGUI.BeginChangeCheck();
 
-            _getFoldersList().DoLayoutList();
+            var inTreeViewOnly = EditorGUILayout.Toggle("In Tree View Only", EditorPrefs.GetBool(k_InTreeViewOnly));
             
             if (EditorGUI.EndChangeCheck())
             {
+                EditorPrefs.SetBool(k_InTreeViewOnly, inTreeViewOnly);
             }
+            
+            _getFoldersList().DoLayoutList();
+            
         }
         
         public static void _updateGradient()
