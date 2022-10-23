@@ -42,7 +42,8 @@ namespace HueFolders
                         return null;
                     
                     var searchGuid = AssetDatabase.GUIDFromAssetPath(searchPath).ToString();
-                    data = SettingsProvider.s_FoldersData.FirstOrDefault(n => n._guid == searchGuid);
+                    
+                    SettingsProvider.s_FoldersDataDic.TryGetValue(searchGuid, out data);
                 }
                 
                 return data;
@@ -95,6 +96,7 @@ namespace HueFolders
             
             bool _isSelected()
             {
+                //return Selection.GetFiltered<DefaultAsset>(SelectionMode.Assets).Select(n => AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(n)).ToString()).Contains(guid);
                 return Selection.assetGUIDs.Contains(guid);
             }
             
@@ -105,8 +107,8 @@ namespace HueFolders
             
             Color _bgColor()
             {
-                if (_isSelected())
-                    return new Color32(44, 93, 135, 255);
+                //if (_isSelected())
+                //    return new Color32(44, 93, 135, 255);
                 
                 return _isTreeView() ? new Color32(56, 56, 56, 255) : new Color32(51, 51, 51, 255);
             }
@@ -127,6 +129,9 @@ namespace HueFolders
             {
                 if (SettingsProvider.s_Gradient == null)
                     SettingsProvider._updateGradient();
+                
+                if (_isSelected())
+                    return SettingsProvider.s_Fill;
                 
                 return SettingsProvider.s_Gradient;
             }

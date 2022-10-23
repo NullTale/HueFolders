@@ -18,11 +18,13 @@ namespace HueFolders
         public const string k_Gradient       = nameof(HueFolders) + "_Gradient";
         public const int    k_GradientWidth  = 16;
         
-        public const bool k_InTreeViewOnly_Default = true;
-        public const bool k_Gradient_Default = true;
+        public const  bool                           k_InTreeViewOnly_Default = true;
+        public const  bool                           k_Gradient_Default       = true;
         
-        public static List<FolderData> s_FoldersData;
-        public static Texture2D        s_Gradient;
+        public static Dictionary<string, FolderData> s_FoldersDataDic;
+        public static List<FolderData>               s_FoldersData;
+        public static Texture2D                      s_Gradient;
+        public static Texture2D                      s_Fill;
         
         private ReorderableList _foldersList;
 
@@ -100,6 +102,8 @@ namespace HueFolders
                                     .ToList();
             }
             
+            s_FoldersDataDic = s_FoldersData.ToDictionary(n => n._guid, n => n);
+            
             _updateGradient();
             if (EditorPrefs.HasKey(k_InTreeViewOnly))
                 EditorPrefs.SetBool(k_InTreeViewOnly, k_InTreeViewOnly_Default);
@@ -142,6 +146,10 @@ namespace HueFolders
             }
 
             s_Gradient.Apply();
+            
+            s_Fill = new Texture2D(1, 1);
+            s_Fill.SetPixel(0, 0, new Color(1, 1, 1, 0.7f));
+            s_Fill.Apply();
         }
 
         private ReorderableList _getFoldersList()
@@ -172,6 +180,8 @@ namespace HueFolders
                     if (folder != null && File.GetAttributes(AssetDatabase.GetAssetPath(folder)).HasFlag(FileAttributes.Directory) == false)
                         folder = null;
                      
+                    EditorApplication.RepaintProjectWindow();
+                    
                     element._guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(folder));
                     _saveProjectPrefs();
                 }
@@ -201,6 +211,7 @@ namespace HueFolders
         
         private void _saveProjectPrefs()
         {
+            s_FoldersDataDic = s_FoldersData.ToDictionary(n => n._guid, n => n);
             var json = new JsonWrapper()
             {
                 FoldersData = new JsonWrapper.DictionaryData<string, Color>(_pathData())
