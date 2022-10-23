@@ -1,7 +1,7 @@
 # HueFolders
  
 #### Description
-Rainbow folders colorization analog
+Folders colorization
 
 #### Installation
 Install from Package Manager git url 
