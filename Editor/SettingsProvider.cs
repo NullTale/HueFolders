@@ -15,9 +15,11 @@ namespace HueFolders
         public const string k_PrefsFile      = nameof(HueFolders) + "_Prefs.json";
         public const string k_PrefsPath      = "ProjectSettings\\" + k_PrefsFile;
         public const string k_InTreeViewOnly = nameof(HueFolders) + "_InTreeViewOnly";
+        public const string k_Gradient       = nameof(HueFolders) + "_Gradient";
         public const int    k_GradientWidth  = 16;
         
         public const bool k_InTreeViewOnly_Default = true;
+        public const bool k_Gradient_Default = true;
         
         public static List<FolderData> s_FoldersData;
         public static Texture2D        s_Gradient;
@@ -110,10 +112,13 @@ namespace HueFolders
             EditorGUI.BeginChangeCheck();
 
             var inTreeViewOnly = EditorGUILayout.Toggle("In Tree View Only", EditorPrefs.GetBool(k_InTreeViewOnly));
+            //var gradient = EditorGUILayout.Toggle("Gradient", EditorPrefs.GetBool(k_Gradient));
             
             if (EditorGUI.EndChangeCheck())
             {
                 EditorPrefs.SetBool(k_InTreeViewOnly, inTreeViewOnly);
+                //EditorPrefs.SetBool(k_Gradient, gradient);
+                _updateGradient();
             }
             
             _getFoldersList().DoLayoutList();
@@ -122,12 +127,18 @@ namespace HueFolders
         
         public static void _updateGradient()
         {
-            s_Gradient = new Texture2D(k_GradientWidth, 1);
-            s_Gradient.wrapMode       = TextureWrapMode.Clamp;
-            for (var x = 0; x < k_GradientWidth; x++)
+            s_Gradient          = new Texture2D(k_GradientWidth, 1);
+            s_Gradient.wrapMode = TextureWrapMode.Clamp;
+            
+            if (EditorPrefs.GetBool(k_Gradient))
             {
-                var gray = (x + 1) / (float)k_GradientWidth;
-                s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, gray));
+                for (var x = 0; x < k_GradientWidth; x++)
+                    s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, (x + 1) / (float)k_GradientWidth));
+            }
+            else
+            {
+                for (var x = 0; x < k_GradientWidth; x++)
+                    s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, 1));
             }
 
             s_Gradient.Apply();
