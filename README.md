@@ -1,7 +1,7 @@
 # HueFolders
  
 #### Description
-Folders colorization
+Folders colorization plugin
 
 #### Installation
 Install from Package Manager git url 
