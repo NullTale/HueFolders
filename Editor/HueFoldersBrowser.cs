@@ -56,8 +56,8 @@ namespace HueFolders
             if (_isTreeView() == false)
                 rect.xMin += 3;
             
-            GUI.color = _bgColor();
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            // GUI.color = _bgColor();
+            // GUI.DrawTexture(rect, Texture2D.whiteTexture);
             
             GUI.color = data._color;
             GUI.DrawTexture(rect, _gradient(), ScaleMode.ScaleAndCrop);
@@ -130,8 +130,8 @@ namespace HueFolders
                 if (SettingsProvider.s_Gradient == null)
                     SettingsProvider._updateGradient();
                 
-                if (_isSelected())
-                    return SettingsProvider.s_Fill;
+                //if (_isSelected())
+                //    return SettingsProvider.s_Fill;
                 
                 return SettingsProvider.s_Gradient;
             }

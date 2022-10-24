@@ -137,7 +137,8 @@ namespace HueFolders
             if (EditorPrefs.GetBool(k_Gradient))
             {
                 for (var x = 0; x < k_GradientWidth; x++)
-                    s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, (x + 1) / (float)k_GradientWidth));
+                    s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, x / (float)(k_GradientWidth - 1)));
+                    //s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, Mathf.Pow(x / (float)(k_GradientWidth - 1), 1.2f)));
             }
             else
             {
