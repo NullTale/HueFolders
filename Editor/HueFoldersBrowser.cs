@@ -82,7 +82,8 @@ namespace HueFolders
             {
                 var result = new Rect(rect);
                 result.xMin += _iconRect().width;
-                result.yMax -= 1;
+                if (_isTreeView())
+                    result.yMax -= 1;
 
                 return result;
             }
@@ -105,13 +106,13 @@ namespace HueFolders
                 return (rect.x - 16) % 14 == 0;
             }
             
-            Color _bgColor()
+            /*Color _bgColor()
             {
                 //if (_isSelected())
                 //    return new Color32(44, 93, 135, 255);
                 
                 return _isTreeView() ? new Color32(56, 56, 56, 255) : new Color32(51, 51, 51, 255);
-            }
+            }*/
             
             GUIStyle _labelSkin()
             {

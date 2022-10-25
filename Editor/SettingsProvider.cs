@@ -178,14 +178,23 @@ namespace HueFolders
                 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    // ignore non directory files
-                    if (folder != null && File.GetAttributes(AssetDatabase.GetAssetPath(folder)).HasFlag(FileAttributes.Directory) == false)
-                        folder = null;
-                     
-                    EditorApplication.RepaintProjectWindow();
+                    var fodlerGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(folder));
+                    
+                    if (element._guid != fodlerGuid)
+                    { 
+                        // ignore non directory files
+                        if (folder != null && File.GetAttributes(AssetDatabase.GetAssetPath(folder)).HasFlag(FileAttributes.Directory) == false)
+                            folder = null;
+
+                        // ignore if already contains
+                        if (folder != null && s_FoldersData.Any(n => n._guid == fodlerGuid))
+                            folder = null;
+                    }
                     
                     element._guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(folder));
                     _saveProjectPrefs();
+                     
+                    EditorApplication.RepaintProjectWindow();
                 }
                 
             };
@@ -213,32 +222,20 @@ namespace HueFolders
         
         private void _saveProjectPrefs()
         {
-            s_FoldersDataDic = s_FoldersData.ToDictionary(n => n._guid, n => n);
+            s_FoldersDataDic = s_FoldersData
+                               .Where(n => n != null && string.IsNullOrEmpty(n._guid) == false && n._guid != Guid.Empty.ToString())
+                               .ToDictionary(n => n._guid, n => n);
+            
             var json = new JsonWrapper()
             {
-                FoldersData = new JsonWrapper.DictionaryData<string, Color>(_pathData())
+                FoldersData = new JsonWrapper.DictionaryData<string, Color>(s_FoldersDataDic
+                                                                            .Values
+                                                                            .Select(n => new KeyValuePair<string, Color>(n._guid, n._color)))
             };
             
             File.WriteAllText(k_PrefsPath, JsonUtility.ToJson(json));
-            
-            // -----------------------------------------------------------------------
-            IEnumerable<KeyValuePair<string, Color>> _pathData()
-            {
-                var data = s_FoldersData.ToArray();
-                for (var n = 0; n < data.Length; n++)
-                {
-                    var guid  = data[n]._guid;
-                    var color = data[n]._color;
-                    
-                    if (guid == Guid.Empty.ToString())
-                        continue;
-                    
-                    yield return new KeyValuePair<string, Color>(guid, color);
-                }
-            }
-            
         }
-        
+
         [SettingsProvider]
         public static UnityEditor.SettingsProvider CreateMyCustomSettingsProvider()
         {
