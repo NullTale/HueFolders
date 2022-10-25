@@ -122,6 +122,7 @@ namespace HueFolders
             {
                 EditorPrefs.SetBool(k_InTreeViewOnly, inTreeViewOnly);
                 //EditorPrefs.SetBool(k_Gradient, gradient);
+                EditorApplication.RepaintProjectWindow();
                 _updateGradient();
             }
             
