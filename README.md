@@ -1,7 +1,7 @@
 # HueFolders
  
 #### Description
-Folders colorization plugin
+Folders colorization plugin. The colors can be customized in the `Edit/Preferences/Hue Folders` menu.
 
 #### Installation
 Install from Package Manager git url 
