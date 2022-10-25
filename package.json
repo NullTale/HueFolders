@@ -3,8 +3,9 @@
   "displayName": "Hue Folders",
   "version": "1.0.0",
   "unity": "2020.3",
-  "description": "Folders colorization plugin",
+  "description": "Folders colorization plugin.\nThe colors can be customized in the Edit/Preferences/Hue Folders menu.",
   "documentationUrl": "https://github.com/NullTale/HueFolders",
+  "licensesUrl": "https://github.com/NullTale/HueFolders/blob/master/LICENSE",
   "author": {
     "name": "NullTale",
     "email": "nulltale@gmail.com",
