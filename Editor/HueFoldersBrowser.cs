@@ -9,6 +9,7 @@ namespace HueFolders
 {
     public class HueFoldersBrowser
     {
+        public static GUIStyle s_labelNormal;
         public static GUIStyle s_labelSelected;
 
         // =======================================================================
@@ -23,19 +24,21 @@ namespace HueFolders
             var path = AssetDatabase.GUIDToAssetPath(guid);
             if (AssetDatabase.IsValidFolder(path) == false) 
                 return;
-            
-            var data = _getFolderData();
+
+            var  data = _getFolderData(out var isSubFolder);
             if (data == null)
                 return;
+            var folderColor = isSubFolder ? data._color * SettingsProvider.s_SubFoldersTint_Value : data._color; 
             
-            SettingsProvider.FolderData _getFolderData()
+            SettingsProvider.FolderData _getFolderData(out bool isSubFolder)
             {
-                var data = SettingsProvider.s_FoldersData.FirstOrDefault(n => n._guid == guid);
-                if (data != null)
-                    return data;
-                        
+                isSubFolder = false;        
+                if (SettingsProvider.s_FoldersDataDic.TryGetValue(guid, out var folderData))
+                    return folderData;
+                
+                isSubFolder = true;        
                 var searchPath = path;
-                while (data == null)
+                while (folderData == null)
                 {
                     searchPath = Path.GetDirectoryName(searchPath);
                     if (string.IsNullOrEmpty(searchPath))
@@ -43,10 +46,12 @@ namespace HueFolders
                     
                     var searchGuid = AssetDatabase.GUIDFromAssetPath(searchPath).ToString();
                     
-                    SettingsProvider.s_FoldersDataDic.TryGetValue(searchGuid, out data);
+                    SettingsProvider.s_FoldersDataDic.TryGetValue(searchGuid, out folderData);
+                    if (folderData != null && folderData._recursive == false)
+                        return null;
                 }
                 
-                return data;
+                return folderData;
             }
             
             var isSmall = rect.width > rect.height;
@@ -59,11 +64,12 @@ namespace HueFolders
             // GUI.color = _bgColor();
             // GUI.DrawTexture(rect, Texture2D.whiteTexture);
             
-            GUI.color = data._color;
+            // draw background, overdraw icon and text
+            GUI.color = folderColor;
             GUI.DrawTexture(rect, _gradient(), ScaleMode.ScaleAndCrop);
             
             GUI.color = Color.white;
-            GUI.DrawTexture(_iconRect(), EditorGUIUtility.IconContent(_isFolderEmpty() ? "d_Folder Icon" : "d_FolderEmpty Icon").image);
+            GUI.DrawTexture(_iconRect(), EditorGUIUtility.IconContent(_isFolderEmpty() ? "d_FolderEmpty Icon" : "d_Folder Icon").image);
             
             GUI.Label(_textRect(), Path.GetFileName(path), _labelSkin());
 
@@ -92,7 +98,7 @@ namespace HueFolders
             {
                 var items = Directory.EnumerateFileSystemEntries(path);
                 using (var en = items.GetEnumerator())
-                    return en.MoveNext();
+                    return en.MoveNext() == false;
             }
             
             bool _isSelected()
@@ -122,8 +128,13 @@ namespace HueFolders
                     //_labelSelected.fontStyle = FontStyle.Bold;
                     s_labelSelected.normal.textColor = Color.white;
                 }
+                if (s_labelNormal == null)
+                {
+                    s_labelNormal = new GUIStyle(GUI.skin.label);
+                    s_labelNormal.normal.textColor = new Color32(175, 175, 175, 255);
+                }
 
-                return _isSelected() ? s_labelSelected : GUI.skin.label;
+                return _isSelected() ? s_labelSelected : s_labelNormal;
             }
             
             Texture2D _gradient()

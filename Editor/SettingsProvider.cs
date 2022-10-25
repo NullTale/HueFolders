@@ -12,11 +12,15 @@ namespace HueFolders
 {
     public class SettingsProvider : UnityEditor.SettingsProvider
     {
-        public const string k_PrefsFile      = nameof(HueFolders) + "_Prefs.json";
-        public const string k_PrefsPath      = "ProjectSettings\\" + k_PrefsFile;
-        public const string k_InTreeViewOnly = nameof(HueFolders) + "_InTreeViewOnly";
-        public const string k_Gradient       = nameof(HueFolders) + "_Gradient";
-        public const int    k_GradientWidth  = 16;
+        public const  string       k_PrefsFile              = nameof(HueFolders) + "_Prefs.json";
+        public const  string       k_PrefsPath              = "ProjectSettings\\" + k_PrefsFile;
+        public const  string       k_InTreeViewOnly         = nameof(HueFolders) + "_InTreeViewOnly";
+        public const  string       k_Gradient               = nameof(HueFolders) + "_Gradient";
+        public const  int          k_GradientWidth          = 16;
+        
+        public static EditorOption s_SubFoldersTint         = new EditorOption(nameof(HueFolders) + "_SubFoldersTint");
+        public static Color        s_SubFoldersTint_Default = Color.white;
+        public static Color        s_SubFoldersTint_Value   = Color.white;
         
         public const  bool                           k_InTreeViewOnly_Default = true;
         public const  bool                           k_Gradient_Default       = true;
@@ -32,7 +36,7 @@ namespace HueFolders
         [Serializable]
         private class JsonWrapper
         {
-            public DictionaryData<string, Color> FoldersData;
+            public DictionaryData<string, FolderData> FoldersData;
             
             // =======================================================================
             [Serializable]
@@ -75,6 +79,55 @@ namespace HueFolders
         {
             public string _guid;
             public Color  _color;
+            public bool   _recursive;
+        }
+        
+        public class EditorOption
+        {
+            public string _key;
+
+            // =======================================================================
+            public EditorOption(string key)
+            {
+                _key = key;
+            }
+
+            public bool HasPrefs() => EditorPrefs.HasKey(_key);
+            
+            public T Get<T>()
+            {
+                var type = typeof(T);
+                
+                if (type == typeof(bool))
+                    return (T)(object)EditorPrefs.GetBool(_key);
+                if (type == typeof(int))
+                    return (T)(object)EditorPrefs.GetInt(_key);
+                if (type == typeof(string))
+                    return (T)(object)EditorPrefs.GetString(_key);
+                
+                return JsonUtility.FromJson<T>(EditorPrefs.GetString(_key));
+            }
+            
+            public void Write<T>(out T val)
+            {
+                val = Get<T>();
+            }
+            
+            public void Set<T>(T val)
+            {
+                var type = typeof(T);
+                
+                if (type == typeof(bool))
+                    EditorPrefs.SetBool(_key, (bool)(object)val);
+                else
+                if (type == typeof(int))
+                    EditorPrefs.SetInt(_key, (int)(object)val);
+                else
+                if (type == typeof(string))
+                    EditorPrefs.SetString(_key, (string)(object)val);
+                else
+                    EditorPrefs.SetString(_key, JsonUtility.ToJson(val));
+            }
         }
         
         // =======================================================================
@@ -90,24 +143,35 @@ namespace HueFolders
             if (File.Exists(k_PrefsPath))
             {
                 using var file = File.OpenText(k_PrefsPath);
-                var       data = JsonUtility.FromJson<JsonWrapper>(file.ReadToEnd());
-                
-                s_FoldersData = data.FoldersData
-                                    .Enumerate()
-                                    .Select(n => new FolderData()
-                                    {
-                                        _guid  = n.Key,
-                                        _color = n.Value
-                                    })
-                                    .ToList();
+                try
+                {
+                    var data = JsonUtility.FromJson<JsonWrapper>(file.ReadToEnd());
+                    
+                    s_FoldersData = data.FoldersData
+                                        .Enumerate()
+                                        .Select(n => n.Value)
+                                        .ToList();
+                }
+                catch
+                {
+                    // ignored
+                }
             }
             
             s_FoldersDataDic = s_FoldersData.ToDictionary(n => n._guid, n => n);
             
-            _updateGradient();
-            if (EditorPrefs.HasKey(k_InTreeViewOnly))
+            if (EditorPrefs.HasKey(k_InTreeViewOnly) == false)
                 EditorPrefs.SetBool(k_InTreeViewOnly, k_InTreeViewOnly_Default);
-
+            
+            //if (EditorPrefs.HasKey(k_Gradient) == false)
+                EditorPrefs.SetBool(k_Gradient, k_Gradient_Default);
+            
+            if (s_SubFoldersTint.HasPrefs() == false)
+                s_SubFoldersTint.Set(s_SubFoldersTint_Default);
+            
+            s_SubFoldersTint.Write(out s_SubFoldersTint_Value);
+            
+            _updateGradient();
             EditorApplication.projectWindowItemOnGUI += HueFoldersBrowser.FolderColorization;
         }
 
@@ -117,11 +181,15 @@ namespace HueFolders
 
             var inTreeViewOnly = EditorGUILayout.Toggle("In Tree View Only", EditorPrefs.GetBool(k_InTreeViewOnly));
             //var gradient = EditorGUILayout.Toggle("Gradient", EditorPrefs.GetBool(k_Gradient));
+            var subFoldersTint = EditorGUILayout.ColorField("Sub Folders Tint", s_SubFoldersTint.Get<Color>());
             
             if (EditorGUI.EndChangeCheck())
             {
                 EditorPrefs.SetBool(k_InTreeViewOnly, inTreeViewOnly);
                 //EditorPrefs.SetBool(k_Gradient, gradient);
+                s_SubFoldersTint.Set(subFoldersTint);
+                s_SubFoldersTint.Write(out s_SubFoldersTint_Value);
+                
                 EditorApplication.RepaintProjectWindow();
                 _updateGradient();
             }
@@ -139,7 +207,6 @@ namespace HueFolders
             {
                 for (var x = 0; x < k_GradientWidth; x++)
                     s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, x / (float)(k_GradientWidth - 1)));
-                    //s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, Mathf.Pow(x / (float)(k_GradientWidth - 1), 1.2f)));
             }
             else
             {
@@ -164,8 +231,9 @@ namespace HueFolders
             {
                 var element = s_FoldersData[index];
                 
-                var refRect = new Rect(rect.position, new Vector2(rect.size.x * .5f - EditorGUIUtility.standardVerticalSpacing, rect.size.y));
-                var colorRect = new Rect(rect.position + new Vector2(rect.size.x * .5f, 0f), new Vector2(rect.size.x * .5f, rect.size.y));
+                var refRect   = new Rect(rect.position, new Vector2(rect.size.x * .5f - EditorGUIUtility.standardVerticalSpacing, rect.size.y));
+                var colorRect = new Rect(rect.position + new Vector2(rect.size.x * .5f, 0f), new Vector2(rect.size.x * .5f - 18f - EditorGUIUtility.standardVerticalSpacing, rect.size.y));
+                var recRect   = new Rect(rect.position + new Vector2(rect.size.x - 18f, 0f), new Vector2(18f, rect.size.y));
                 
                 EditorGUI.BeginChangeCheck();
                 var folder = EditorGUI.ObjectField(refRect,
@@ -174,7 +242,8 @@ namespace HueFolders
                                                    typeof(DefaultAsset),
                                                    false);
                 
-                element._color = EditorGUI.ColorField(colorRect, GUIContent.none, element._color);
+                element._color     = EditorGUI.ColorField(colorRect, GUIContent.none, element._color);
+                element._recursive = EditorGUI.Toggle(recRect, GUIContent.none, element._recursive);
                 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -209,7 +278,7 @@ namespace HueFolders
                 var color = Color.HSVToRGB(Random.value, 0.7f, 0.8f);
                 color.a = 0.7f;
                 
-                s_FoldersData.Add(new FolderData() { _color = color });
+                s_FoldersData.Add(new FolderData() { _color = color, _recursive = true});
             };
             _foldersList.drawHeaderCallback = rect =>
             {
@@ -228,9 +297,9 @@ namespace HueFolders
             
             var json = new JsonWrapper()
             {
-                FoldersData = new JsonWrapper.DictionaryData<string, Color>(s_FoldersDataDic
+                FoldersData = new JsonWrapper.DictionaryData<string, FolderData>(s_FoldersDataDic
                                                                             .Values
-                                                                            .Select(n => new KeyValuePair<string, Color>(n._guid, n._color)))
+                                                                            .Select(n => new KeyValuePair<string, FolderData>(n._guid, n)))
             };
             
             File.WriteAllText(k_PrefsPath, JsonUtility.ToJson(json));
