@@ -28,7 +28,6 @@ namespace HueFolders
         public static Dictionary<string, FolderData> s_FoldersDataDic;
         public static List<FolderData>               s_FoldersData;
         public static Texture2D                      s_Gradient;
-        public static Texture2D                      s_Fill;
         
         private ReorderableList _foldersList;
 
@@ -116,10 +115,10 @@ namespace HueFolders
                     return (T)(object)EditorPrefs.GetBool(_key);
                 if (type == typeof(int))
                     return (T)(object)EditorPrefs.GetInt(_key);
-                if (type == typeof(string))
-                    return (T)(object)EditorPrefs.GetString(_key);
                 if (type == typeof(float))
                     return (T)(object)EditorPrefs.GetFloat(_key);
+                if (type == typeof(string))
+                    return (T)(object)EditorPrefs.GetString(_key);
                 
                 return JsonUtility.FromJson<T>(EditorPrefs.GetString(_key));
             }
@@ -148,6 +147,13 @@ namespace HueFolders
         // =======================================================================
         public SettingsProvider(string path, SettingsScope scopes, IEnumerable<string> keywords = null) : base(path, scopes, keywords)
         {
+        }
+        
+        [SettingsProvider]
+        public static UnityEditor.SettingsProvider CreateSettingsProvider()
+        {
+            var provider = new SettingsProvider("Preferences/Hue Folders", SettingsScope.User);
+            return provider;
         }
         
         [InitializeOnLoadMethod]
@@ -222,10 +228,6 @@ namespace HueFolders
             }
 
             s_Gradient.Apply();
-            
-            s_Fill = new Texture2D(1, 1);
-            s_Fill.SetPixel(0, 0, new Color(1, 1, 1, 0.7f));
-            s_Fill.Apply();
         }
 
         private ReorderableList _getFoldersList()
@@ -309,14 +311,6 @@ namespace HueFolders
             };
             
             File.WriteAllText(k_PrefsPath, JsonUtility.ToJson(json));
-        }
-
-        [SettingsProvider]
-        public static UnityEditor.SettingsProvider CreateMyCustomSettingsProvider()
-        {
-            var provider = new SettingsProvider("Preferences/Hue Folders", SettingsScope.User);
-
-            return provider;
         }
     }
 }

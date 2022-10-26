@@ -15,9 +15,6 @@ namespace HueFolders
         // =======================================================================
         public static void FolderColorization(string guid, Rect rect)
         {
-            //if (EditorGUIUtility.isProSkin == false)
-            //    return;
-            
             if (SettingsProvider.s_InTreeViewOnly.Get<bool>() && _isTreeView() == false)
                 return;
             
@@ -60,9 +57,6 @@ namespace HueFolders
 
             if (_isTreeView() == false)
                 rect.xMin += 3;
-            
-            // GUI.color = _bgColor();
-            // GUI.DrawTexture(rect, Texture2D.whiteTexture);
             
             // draw background, overdraw icon and text
             GUI.color = folderColor;
@@ -127,15 +121,6 @@ namespace HueFolders
             {
                 return (rect.x - 16) % 14 == 0;
             }
-            
-            /*Color _bgColor()
-            {
-				// for pro skin
-                //if (_isSelected())
-                //    return new Color32(44, 93, 135, 255);
-                
-                return _isTreeView() ? new Color32(56, 56, 56, 255) : new Color32(51, 51, 51, 255);
-            }*/
             
             GUIStyle _labelSkin()
             {
