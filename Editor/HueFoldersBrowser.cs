@@ -15,10 +15,10 @@ namespace HueFolders
         // =======================================================================
         public static void FolderColorization(string guid, Rect rect)
         {
-            if (EditorGUIUtility.isProSkin == false)
-                return;
+            //if (EditorGUIUtility.isProSkin == false)
+            //    return;
             
-            if (EditorPrefs.GetBool(SettingsProvider.k_InTreeViewOnly) && _isTreeView() == false)
+            if (SettingsProvider.s_InTreeViewOnly.Get<bool>() && _isTreeView() == false)
                 return;
             
             var path = AssetDatabase.GUIDToAssetPath(guid);
@@ -69,7 +69,7 @@ namespace HueFolders
             GUI.DrawTexture(rect, _gradient(), ScaleMode.ScaleAndCrop);
             
             GUI.color = Color.white;
-            GUI.DrawTexture(_iconRect(), EditorGUIUtility.IconContent(_isFolderEmpty() ? "d_FolderEmpty Icon" : "d_Folder Icon").image);
+            GUI.DrawTexture(_iconRect(), _folderIcon());
             
             GUI.Label(_textRect(), Path.GetFileName(path), _labelSkin());
 
@@ -91,12 +91,26 @@ namespace HueFolders
                 if (_isTreeView())
                 {
                     result.yMax -= 1;
-                    result.xMin += 1;
+                    if (result.xMin % 2 != 0)
+                        result.xMin += 1;
                 }
 
                 return result;
             }
             
+			Texture _folderIcon()
+			{
+				if (EditorGUIUtility.isProSkin)
+					return EditorGUIUtility.IconContent(_isFolderEmpty() ? "FolderEmpty Icon" : "Folder Icon").image;
+				else
+                {
+                    if (_isSelected())
+					    return EditorGUIUtility.IconContent(_isFolderEmpty() ? "FolderEmpty On Icon" : "Folder On Icon").image;
+                    else
+					    return EditorGUIUtility.IconContent(_isFolderEmpty() ? "FolderEmpty Icon" : "Folder Icon").image;
+                }
+			}
+			
             bool _isFolderEmpty()
             {
                 var items = Directory.EnumerateFileSystemEntries(path);
@@ -116,6 +130,7 @@ namespace HueFolders
             
             /*Color _bgColor()
             {
+				// for pro skin
                 //if (_isSelected())
                 //    return new Color32(44, 93, 135, 255);
                 
@@ -133,7 +148,7 @@ namespace HueFolders
                 if (s_labelNormal == null)
                 {
                     s_labelNormal                  = new GUIStyle(GUI.skin.label);
-                    s_labelNormal.normal.textColor = new Color32(175, 175, 175, 255);
+                    s_labelNormal.normal.textColor = EditorGUIUtility.isProSkin ? new Color32(175, 175, 175, 255) : new Color32(2, 2, 2, 255);
                     s_labelNormal.hover.textColor  = s_labelNormal.normal.textColor;
                 }
 
