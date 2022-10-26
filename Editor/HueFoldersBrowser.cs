@@ -28,7 +28,7 @@ namespace HueFolders
             var  data = _getFolderData(out var isSubFolder);
             if (data == null)
                 return;
-            var folderColor = isSubFolder ? data._color * SettingsProvider.s_SubFoldersTint_Value : data._color; 
+            var folderColor = isSubFolder ? data._color * SettingsProvider.s_SubFoldersTint.Get<Color>() : data._color; 
             
             SettingsProvider.FolderData _getFolderData(out bool isSubFolder)
             {
@@ -89,7 +89,10 @@ namespace HueFolders
                 var result = new Rect(rect);
                 result.xMin += _iconRect().width;
                 if (_isTreeView())
+                {
                     result.yMax -= 1;
+                    result.xMin += 1;
+                }
 
                 return result;
             }
@@ -103,7 +106,6 @@ namespace HueFolders
             
             bool _isSelected()
             {
-                //return Selection.GetFiltered<DefaultAsset>(SelectionMode.Assets).Select(n => AssetDatabase.GUIDFromAssetPath(AssetDatabase.GetAssetPath(n)).ToString()).Contains(guid);
                 return Selection.assetGUIDs.Contains(guid);
             }
             
@@ -124,14 +126,15 @@ namespace HueFolders
             {
                 if (s_labelSelected == null)
                 {
-                    s_labelSelected = new GUIStyle(GUI.skin.label);
-                    //_labelSelected.fontStyle = FontStyle.Bold;
+                    s_labelSelected                  = new GUIStyle(GUI.skin.label);
                     s_labelSelected.normal.textColor = Color.white;
+                    s_labelSelected.hover.textColor  = s_labelSelected.normal.textColor;
                 }
                 if (s_labelNormal == null)
                 {
-                    s_labelNormal = new GUIStyle(GUI.skin.label);
+                    s_labelNormal                  = new GUIStyle(GUI.skin.label);
                     s_labelNormal.normal.textColor = new Color32(175, 175, 175, 255);
+                    s_labelNormal.hover.textColor  = s_labelNormal.normal.textColor;
                 }
 
                 return _isSelected() ? s_labelSelected : s_labelNormal;

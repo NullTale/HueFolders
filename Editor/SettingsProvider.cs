@@ -20,7 +20,6 @@ namespace HueFolders
         
         public static EditorOption s_SubFoldersTint         = new EditorOption(nameof(HueFolders) + "_SubFoldersTint");
         public static Color        s_SubFoldersTint_Default = Color.white;
-        public static Color        s_SubFoldersTint_Value   = Color.white;
         
         public const  bool                           k_InTreeViewOnly_Default = true;
         public const  bool                           k_Gradient_Default       = true;
@@ -85,6 +84,7 @@ namespace HueFolders
         public class EditorOption
         {
             public string _key;
+            public object _val;
 
             // =======================================================================
             public EditorOption(string key)
@@ -92,9 +92,22 @@ namespace HueFolders
                 _key = key;
             }
 
+            public void Setup<T>(T def)
+            {
+                if (HasPrefs() == false)
+                    Write(def);
+                
+                _val = Read<T>();
+            }
+            
             public bool HasPrefs() => EditorPrefs.HasKey(_key);
             
             public T Get<T>()
+            {
+                return (T)_val;
+            }
+            
+            public T Read<T>()
             {
                 var type = typeof(T);
                 
@@ -108,23 +121,19 @@ namespace HueFolders
                 return JsonUtility.FromJson<T>(EditorPrefs.GetString(_key));
             }
             
-            public void Write<T>(out T val)
-            {
-                val = Get<T>();
-            }
-            
-            public void Set<T>(T val)
+            public void Write<T>(T val)
             {
                 var type = typeof(T);
+                _val = val;
                 
                 if (type == typeof(bool))
-                    EditorPrefs.SetBool(_key, (bool)(object)val);
+                    EditorPrefs.SetBool(_key, (bool)_val);
                 else
                 if (type == typeof(int))
-                    EditorPrefs.SetInt(_key, (int)(object)val);
+                    EditorPrefs.SetInt(_key, (int)_val);
                 else
                 if (type == typeof(string))
-                    EditorPrefs.SetString(_key, (string)(object)val);
+                    EditorPrefs.SetString(_key, (string)_val);
                 else
                     EditorPrefs.SetString(_key, JsonUtility.ToJson(val));
             }
@@ -166,11 +175,8 @@ namespace HueFolders
             //if (EditorPrefs.HasKey(k_Gradient) == false)
                 EditorPrefs.SetBool(k_Gradient, k_Gradient_Default);
             
-            if (s_SubFoldersTint.HasPrefs() == false)
-                s_SubFoldersTint.Set(s_SubFoldersTint_Default);
-            
-            s_SubFoldersTint.Write(out s_SubFoldersTint_Value);
-            
+            s_SubFoldersTint.Setup(s_SubFoldersTint_Default);
+
             _updateGradient();
             EditorApplication.projectWindowItemOnGUI += HueFoldersBrowser.FolderColorization;
         }
@@ -187,8 +193,7 @@ namespace HueFolders
             {
                 EditorPrefs.SetBool(k_InTreeViewOnly, inTreeViewOnly);
                 //EditorPrefs.SetBool(k_Gradient, gradient);
-                s_SubFoldersTint.Set(subFoldersTint);
-                s_SubFoldersTint.Write(out s_SubFoldersTint_Value);
+                s_SubFoldersTint.Write(subFoldersTint);
                 
                 EditorApplication.RepaintProjectWindow();
                 _updateGradient();
@@ -287,7 +292,6 @@ namespace HueFolders
             
             return _foldersList;
         }
-        
         
         private void _saveProjectPrefs()
         {
