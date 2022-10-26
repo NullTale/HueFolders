@@ -14,15 +14,16 @@ namespace HueFolders
     {
         public const  string       k_PrefsFile              = nameof(HueFolders) + "_Prefs.json";
         public const  string       k_PrefsPath              = "ProjectSettings\\" + k_PrefsFile;
-        public const  string       k_InTreeViewOnly         = nameof(HueFolders) + "_InTreeViewOnly";
-        public const  string       k_Gradient               = nameof(HueFolders) + "_Gradient";
         public const  int          k_GradientWidth          = 16;
         
-        public static EditorOption s_SubFoldersTint         = new EditorOption(nameof(HueFolders) + "_SubFoldersTint");
-        public static Color        s_SubFoldersTint_Default = Color.white;
+        public static  EditorOption s_InTreeViewOnly         = new EditorOption(nameof(HueFolders) + "_InTreeViewOnly");
+        private const  bool         k_InTreeViewOnly_Default = true;
         
-        public const  bool                           k_InTreeViewOnly_Default = true;
-        public const  bool                           k_Gradient_Default       = true;
+        public static  EditorOption s_SubFoldersTint         = new EditorOption(nameof(HueFolders) + "_SubFoldersTint");
+        private static Color        k_SubFoldersTint_Default = Color.white;
+        
+        public static  EditorOption s_GradientScale          = new EditorOption(nameof(HueFolders) + "_GradientScale");
+        private const  float        k_GradientScale_Default  = 0.7f;
         
         public static Dictionary<string, FolderData> s_FoldersDataDic;
         public static List<FolderData>               s_FoldersData;
@@ -117,6 +118,8 @@ namespace HueFolders
                     return (T)(object)EditorPrefs.GetInt(_key);
                 if (type == typeof(string))
                     return (T)(object)EditorPrefs.GetString(_key);
+                if (type == typeof(float))
+                    return (T)(object)EditorPrefs.GetFloat(_key);
                 
                 return JsonUtility.FromJson<T>(EditorPrefs.GetString(_key));
             }
@@ -134,6 +137,9 @@ namespace HueFolders
                 else
                 if (type == typeof(string))
                     EditorPrefs.SetString(_key, (string)_val);
+                else
+                if (type == typeof(float))
+                    EditorPrefs.SetFloat(_key, (float)_val);
                 else
                     EditorPrefs.SetString(_key, JsonUtility.ToJson(val));
             }
@@ -169,13 +175,9 @@ namespace HueFolders
             
             s_FoldersDataDic = s_FoldersData.ToDictionary(n => n._guid, n => n);
             
-            if (EditorPrefs.HasKey(k_InTreeViewOnly) == false)
-                EditorPrefs.SetBool(k_InTreeViewOnly, k_InTreeViewOnly_Default);
-            
-            //if (EditorPrefs.HasKey(k_Gradient) == false)
-                EditorPrefs.SetBool(k_Gradient, k_Gradient_Default);
-            
-            s_SubFoldersTint.Setup(s_SubFoldersTint_Default);
+            s_InTreeViewOnly.Setup(k_InTreeViewOnly_Default);
+            s_SubFoldersTint.Setup(k_SubFoldersTint_Default);
+            s_GradientScale.Setup(k_GradientScale_Default);
 
             _updateGradient();
             EditorApplication.projectWindowItemOnGUI += HueFoldersBrowser.FolderColorization;
@@ -185,15 +187,15 @@ namespace HueFolders
         {
             EditorGUI.BeginChangeCheck();
 
-            var inTreeViewOnly = EditorGUILayout.Toggle("In Tree View Only", EditorPrefs.GetBool(k_InTreeViewOnly));
-            //var gradient = EditorGUILayout.Toggle("Gradient", EditorPrefs.GetBool(k_Gradient));
+            var inTreeViewOnly = EditorGUILayout.Toggle("In Tree View Only", s_InTreeViewOnly.Get<bool>());
             var subFoldersTint = EditorGUILayout.ColorField("Sub Folders Tint", s_SubFoldersTint.Get<Color>());
+            var gradientScale  = EditorGUILayout.Slider("Gradient scale", s_GradientScale.Get<float>(), 0f, 1f);
             
             if (EditorGUI.EndChangeCheck())
             {
-                EditorPrefs.SetBool(k_InTreeViewOnly, inTreeViewOnly);
-                //EditorPrefs.SetBool(k_Gradient, gradient);
+                s_InTreeViewOnly.Write(inTreeViewOnly);
                 s_SubFoldersTint.Write(subFoldersTint);
+                s_GradientScale.Write(gradientScale);
                 
                 EditorApplication.RepaintProjectWindow();
                 _updateGradient();
@@ -208,10 +210,10 @@ namespace HueFolders
             s_Gradient          = new Texture2D(k_GradientWidth, 1);
             s_Gradient.wrapMode = TextureWrapMode.Clamp;
             
-            if (EditorPrefs.GetBool(k_Gradient))
+            if (s_GradientScale.Get<float>() > 0.01f)
             {
                 for (var x = 0; x < k_GradientWidth; x++)
-                    s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, x / (float)(k_GradientWidth - 1)));
+                    s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, Mathf.Clamp01(x / ((k_GradientWidth - 1f) * s_GradientScale.Get<float>() * 1.42857f))));
             }
             else
             {
