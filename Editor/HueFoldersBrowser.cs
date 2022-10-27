@@ -25,7 +25,13 @@ namespace HueFolders
             var  data = _getFolderData(out var isSubFolder);
             if (data == null)
                 return;
-            var folderColor = isSubFolder ? data._color * SettingsProvider.s_SubFoldersTint.Get<Color>() : data._color; 
+            
+            var folderColor = data._color;
+            if (isSubFolder)
+            {
+                var tint = SettingsProvider.s_SubFoldersTint.Get<Color>(); 
+                folderColor *= tint;
+            } 
             
             SettingsProvider.FolderData _getFolderData(out bool isSubFolder)
             {
@@ -85,8 +91,9 @@ namespace HueFolders
                 if (_isTreeView())
                 {
                     result.yMax -= 1;
-                    if (result.xMin % 2 != 0)
-                        result.xMin += 1;
+#if UNITY_2022_1_OR_NEWER
+                    result.xMin += 1;
+#endif
                 }
 
                 return result;
@@ -139,7 +146,7 @@ namespace HueFolders
 
                 return _isSelected() ? s_labelSelected : s_labelNormal;
             }
-            
+
             Texture2D _gradient()
             {
                 if (SettingsProvider.s_Gradient == null)
