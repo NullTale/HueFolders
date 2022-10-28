@@ -90,9 +90,10 @@ namespace HueFolders
                 result.xMin += _iconRect().width;
                 if (_isTreeView())
                 {
-                    result.yMax -= 1;
+                    result.yMax -= 1; 
 #if UNITY_2022_1_OR_NEWER
-                    result.xMin += 1;
+                    if (SettingsProvider.s_VisualizationFix.Get<bool>())
+                        result.xMin += 1;
 #endif
                 }
 
