@@ -19,14 +19,15 @@ namespace HueFolders
         public static  EditorOption s_InTreeViewOnly         = new EditorOption(nameof(HueFolders) + "_InTreeViewOnly");
         private const  bool         k_InTreeViewOnly_Default = true;
         
+        
+        public static  EditorOption s_FoldersTint           = new EditorOption(nameof(HueFolders) + "_FoldersTint");
+        private static Color        k_FoldersTint_Default   = Color.white;
+        
         public static  EditorOption s_SubFoldersTint         = new EditorOption(nameof(HueFolders) + "_SubFoldersTint");
-        private static Color        k_SubFoldersTint_Default = Color.white;
+        private static Color        k_SubFoldersTint_Default = new Color(1, 1, 1, 0.7f);
         
         public static  EditorOption s_GradientScale          = new EditorOption(nameof(HueFolders) + "_GradientScale");
         private const  float        k_GradientScale_Default  = 0.7f;
-        
-        public static  EditorOption s_VisualizationFix       = new EditorOption(nameof(HueFolders) + "_VisualizationFix");
-        private const  bool         k_VisualizationFix_Default  = false;
         
         public static Dictionary<string, FolderData> s_FoldersDataDic;
         public static List<FolderData>               s_FoldersData;
@@ -187,7 +188,7 @@ namespace HueFolders
             s_InTreeViewOnly.Setup(k_InTreeViewOnly_Default);
             s_SubFoldersTint.Setup(k_SubFoldersTint_Default);
             s_GradientScale.Setup(k_GradientScale_Default);
-            s_VisualizationFix.Setup(k_VisualizationFix_Default);
+            s_FoldersTint.Setup(k_FoldersTint_Default);
 
             _updateGradient();
             EditorApplication.projectWindowItemOnGUI += HueFoldersBrowser.FolderColorization;
@@ -198,9 +199,7 @@ namespace HueFolders
             EditorGUI.BeginChangeCheck();
 
             var inTreeViewOnly = EditorGUILayout.Toggle("In Tree View Only", s_InTreeViewOnly.Get<bool>());
-#if UNITY_2022_1_OR_NEWER
-            var textFix        = EditorGUILayout.Toggle("Text fix", s_VisualizationFix.Get<bool>());
-#endif
+            var foldersTint    = EditorGUILayout.ColorField("Folders Tint", s_FoldersTint.Get<Color>());
             var subFoldersTint = EditorGUILayout.ColorField("Sub Folders Tint", s_SubFoldersTint.Get<Color>());
             var gradientScale  = EditorGUILayout.Slider("Gradient scale", s_GradientScale.Get<float>(), 0f, 1f);
             
@@ -209,7 +208,7 @@ namespace HueFolders
                 s_InTreeViewOnly.Write(inTreeViewOnly);
                 s_SubFoldersTint.Write(subFoldersTint);
                 s_GradientScale.Write(gradientScale);
-                s_VisualizationFix.Write(textFix);
+                s_FoldersTint.Write(foldersTint);
                 
                 EditorApplication.RepaintProjectWindow();
                 _updateGradient();

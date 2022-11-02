@@ -26,12 +26,12 @@ namespace HueFolders
             if (data == null)
                 return;
             
-            var folderColor = data._color;
+            var folderColor = data._color * SettingsProvider.s_FoldersTint.Get<Color>();
             if (isSubFolder)
             {
                 var tint = SettingsProvider.s_SubFoldersTint.Get<Color>(); 
                 folderColor *= tint;
-            } 
+            }
             
             SettingsProvider.FolderData _getFolderData(out bool isSubFolder)
             {
