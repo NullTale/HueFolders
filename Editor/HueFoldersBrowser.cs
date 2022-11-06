@@ -7,10 +7,10 @@ using UnityEngine;
 
 namespace HueFolders
 {
-    public class HueFoldersBrowser
+    public static class HueFoldersBrowser
     {
-        public static GUIStyle s_labelNormal;
-        public static GUIStyle s_labelSelected;
+        private static GUIStyle s_labelNormal;
+        private static GUIStyle s_labelSelected;
 
         // =======================================================================
         public static void FolderColorization(string guid, Rect rect)
@@ -19,18 +19,44 @@ namespace HueFolders
                 return;
             
             var path = AssetDatabase.GUIDToAssetPath(guid);
-            if (AssetDatabase.IsValidFolder(path) == false) 
+            if (_isValidFolder(path)) 
                 return;
 
+            // get base color of folder, configure rect
             var  data = _getFolderData(out var isSubFolder);
-            if (data == null)
+            var baseColor = data == null ? SettingsProvider.s_FoldersDefaultTint : data._color;
+            if (baseColor.a <= 0f)
                 return;
             
-            var folderColor = data._color * SettingsProvider.s_FoldersTint.Get<Color>();
+            var folderColor = baseColor * SettingsProvider.s_FoldersTint.Get<Color>();
             if (isSubFolder)
             {
                 var tint = SettingsProvider.s_SubFoldersTint.Get<Color>(); 
                 folderColor *= tint;
+            }
+            
+            var isSmall = rect.width > rect.height;
+            if (isSmall == false)
+                return;
+
+            if (_isTreeView() == false)
+                rect.xMin += 3;
+            
+            // draw background, overdraw icon and text
+            GUI.color = folderColor;
+            GUI.DrawTexture(rect, _gradient(), ScaleMode.ScaleAndCrop);
+            
+            GUI.color = Color.white;
+            GUI.DrawTexture(_iconRect(), _folderIcon());
+            
+            GUI.Label(_textRect(), Path.GetFileName(path), _labelSkin());
+
+            GUI.color = Color.white;
+            
+            // =======================================================================
+            bool _isValidFolder(string path)
+            {
+                return AssetDatabase.IsValidFolder(path) == false || path.StartsWith("Packages") || path.Equals("Assets");
             }
             
             SettingsProvider.FolderData _getFolderData(out bool isSubFolder)
@@ -57,25 +83,6 @@ namespace HueFolders
                 return folderData;
             }
             
-            var isSmall = rect.width > rect.height;
-            if (isSmall == false)
-                return;
-
-            if (_isTreeView() == false)
-                rect.xMin += 3;
-            
-            // draw background, overdraw icon and text
-            GUI.color = folderColor;
-            GUI.DrawTexture(rect, _gradient(), ScaleMode.ScaleAndCrop);
-            
-            GUI.color = Color.white;
-            GUI.DrawTexture(_iconRect(), _folderIcon());
-            
-            GUI.Label(_textRect(), Path.GetFileName(path), _labelSkin());
-
-            GUI.color = Color.white;
-            
-            // =======================================================================
             Rect _iconRect()
             {
                 var result = new Rect(rect);
@@ -155,5 +162,6 @@ namespace HueFolders
                 return SettingsProvider.s_Gradient;
             }
         }
+
     }
 }

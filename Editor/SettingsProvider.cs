@@ -23,6 +23,7 @@ namespace HueFolders
         public static  EditorOption s_FoldersTint           = new EditorOption(nameof(HueFolders) + "_FoldersTint");
         private static Color        k_FoldersTint_Default   = Color.white;
         
+        
         public static  EditorOption s_SubFoldersTint         = new EditorOption(nameof(HueFolders) + "_SubFoldersTint");
         private static Color        k_SubFoldersTint_Default = new Color(1, 1, 1, 0.7f);
         
@@ -30,6 +31,9 @@ namespace HueFolders
         private const  float        k_GradientScale_Default  = 0.7f;
         
         public static Dictionary<string, FolderData> s_FoldersDataDic;
+        public static Color                          s_FoldersDefaultTint;
+        private static Color                         k_FoldersDefaultTint_Default = new Color(.6f, .6f, .7f, .7f);
+        
         public static List<FolderData>               s_FoldersData;
         public static Texture2D                      s_Gradient;
         
@@ -39,6 +43,7 @@ namespace HueFolders
         [Serializable]
         private class JsonWrapper
         {
+            public Color                              DefaultTint;
             public DictionaryData<string, FolderData> FoldersData;
             
             // =======================================================================
@@ -163,8 +168,9 @@ namespace HueFolders
         [InitializeOnLoadMethod]
         private static void InitializeOnLoad()
         {
-            s_FoldersData = new List<FolderData>();
-            
+            // initialize data from json, read editor prefs
+            _setProjectDataDefault();
+
             if (File.Exists(k_PrefsPath))
             {
                 using var file = File.OpenText(k_PrefsPath);
@@ -176,10 +182,12 @@ namespace HueFolders
                                         .Enumerate()
                                         .Select(n => n.Value)
                                         .ToList();
+                    
+                    s_FoldersDefaultTint = data.DefaultTint;
                 }
                 catch
                 {
-                    // ignored
+                    _setProjectDataDefault();
                 }
             }
             
@@ -192,13 +200,34 @@ namespace HueFolders
 
             _updateGradient();
             EditorApplication.projectWindowItemOnGUI += HueFoldersBrowser.FolderColorization;
+
+            // -----------------------------------------------------------------------
+            void _setProjectDataDefault()
+            {
+                s_FoldersData        = new List<FolderData>();
+                s_FoldersDefaultTint = k_FoldersDefaultTint_Default;
+            }
         }
 
         public override void OnGUI(string searchContext)
         {
+            // draw ui, update variables
+            
+
+            // editor prefs variables
             EditorGUI.BeginChangeCheck();
 
             var inTreeViewOnly = EditorGUILayout.Toggle("In Tree View Only", s_InTreeViewOnly.Get<bool>());
+            // project prefs variables
+            EditorGUI.BeginChangeCheck();
+            
+            s_FoldersDefaultTint = EditorGUILayout.ColorField("Default tint", s_FoldersDefaultTint);
+            
+            if (EditorGUI.EndChangeCheck())
+            {
+                EditorApplication.RepaintProjectWindow();
+                _saveProjectPrefs();
+            }
             var foldersTint    = EditorGUILayout.ColorField("Folders Tint", s_FoldersTint.Get<Color>());
             var subFoldersTint = EditorGUILayout.ColorField("Sub Folders Tint", s_SubFoldersTint.Get<Color>());
             var gradientScale  = EditorGUILayout.Slider("Gradient scale", s_GradientScale.Get<float>(), 0f, 1f);
@@ -312,6 +341,7 @@ namespace HueFolders
             
             var json = new JsonWrapper()
             {
+                DefaultTint = s_FoldersDefaultTint,
                 FoldersData = new JsonWrapper.DictionaryData<string, FolderData>(s_FoldersDataDic
                                                                             .Values
                                                                             .Select(n => new KeyValuePair<string, FolderData>(n._guid, n)))
