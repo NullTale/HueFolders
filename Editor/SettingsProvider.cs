@@ -28,7 +28,7 @@ namespace HueFolders
         private static Color        k_SubFoldersTint_Default = new Color(1, 1, 1, 0.7f);
         
         public static  EditorOption s_GradientScale          = new EditorOption(nameof(HueFolders) + "_GradientScale");
-        private const  float        k_GradientScale_Default  = 0.7f;
+        private static Vector2      k_GradientScale_Default  = new Vector2(0.536f, 1f);
         
         public static Dictionary<string, FolderData> s_FoldersDataDic;
         public static Color                          s_FoldersDefaultTint;
@@ -106,7 +106,7 @@ namespace HueFolders
                 if (HasPrefs() == false)
                     Write(def);
                 
-                _val = Read<T>();
+                _val = Read<T>(def);
             }
             
             public bool HasPrefs() => EditorPrefs.HasKey(_key);
@@ -116,20 +116,27 @@ namespace HueFolders
                 return (T)_val;
             }
             
-            public T Read<T>()
+            public T Read<T>(T fallOff = default)
             {
-                var type = typeof(T);
-                
-                if (type == typeof(bool))
-                    return (T)(object)EditorPrefs.GetBool(_key);
-                if (type == typeof(int))
-                    return (T)(object)EditorPrefs.GetInt(_key);
-                if (type == typeof(float))
-                    return (T)(object)EditorPrefs.GetFloat(_key);
-                if (type == typeof(string))
-                    return (T)(object)EditorPrefs.GetString(_key);
-                
-                return JsonUtility.FromJson<T>(EditorPrefs.GetString(_key));
+                try
+                {
+                    var type = typeof(T);
+                    
+                    if (type == typeof(bool))
+                        return (T)(object)EditorPrefs.GetBool(_key);
+                    if (type == typeof(int))
+                        return (T)(object)EditorPrefs.GetInt(_key);
+                    if (type == typeof(float))
+                        return (T)(object)EditorPrefs.GetFloat(_key);
+                    if (type == typeof(string))
+                        return (T)(object)EditorPrefs.GetString(_key);
+                    
+                    return JsonUtility.FromJson<T>(EditorPrefs.GetString(_key));
+                }
+                catch
+                {
+                    return fallOff;
+                }
             }
             
             public void Write<T>(T val)
@@ -221,7 +228,7 @@ namespace HueFolders
             // project prefs variables
             EditorGUI.BeginChangeCheck();
             
-            s_FoldersDefaultTint = EditorGUILayout.ColorField("Default tint", s_FoldersDefaultTint);
+            s_FoldersDefaultTint = EditorGUILayout.ColorField("Default Tint", s_FoldersDefaultTint);
             
             if (EditorGUI.EndChangeCheck())
             {
@@ -230,7 +237,8 @@ namespace HueFolders
             }
             var foldersTint    = EditorGUILayout.ColorField("Folders Tint", s_FoldersTint.Get<Color>());
             var subFoldersTint = EditorGUILayout.ColorField("Sub Folders Tint", s_SubFoldersTint.Get<Color>());
-            var gradientScale  = EditorGUILayout.Slider("Gradient scale", s_GradientScale.Get<float>(), 0f, 1f);
+            var gradientScale  = s_GradientScale.Get<Vector2>(); 
+            EditorGUILayout.MinMaxSlider("Gradient Scale", ref gradientScale.x, ref gradientScale.y, 0f, 1f);
             
             if (EditorGUI.EndChangeCheck())
             {
@@ -251,16 +259,29 @@ namespace HueFolders
         {
             s_Gradient          = new Texture2D(k_GradientWidth, 1);
             s_Gradient.wrapMode = TextureWrapMode.Clamp;
+            var range = s_GradientScale.Get<Vector2>();
             
-            if (s_GradientScale.Get<float>() > 0.01f)
+            if (range == new Vector2(0, 1))
             {
                 for (var x = 0; x < k_GradientWidth; x++)
-                    s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, Mathf.Clamp01(x / ((k_GradientWidth - 1f) * s_GradientScale.Get<float>() * 1.42857f))));
+                    s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, 1));
             }
             else
             {
                 for (var x = 0; x < k_GradientWidth; x++)
-                    s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, 1));
+                    s_Gradient.SetPixel(x, 0, new Color(1, 1, 1, _getAlpha(x)));
+
+                // -----------------------------------------------------------------------
+                float _getAlpha(int xPixel)
+                {
+                    var xScale = xPixel / (k_GradientWidth - 1f);
+                    
+                    if (xScale >= range.x && xScale <= range.y)
+                        return 1f;
+                    
+                    var distance = xScale < range.x ? range.x - xScale : xScale - range.y; 
+                    return Mathf.Clamp01(1f - distance * 3f);
+                }
             }
 
             s_Gradient.Apply();

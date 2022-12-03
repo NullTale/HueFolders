@@ -11,7 +11,7 @@ namespace HueFolders
     {
         private static GUIStyle s_labelNormal;
         private static GUIStyle s_labelSelected;
-
+        
         // =======================================================================
         public static void FolderColorization(string guid, Rect rect)
         {
