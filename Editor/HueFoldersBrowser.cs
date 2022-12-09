@@ -49,7 +49,8 @@ namespace HueFolders
             GUI.color = Color.white;
             GUI.DrawTexture(_iconRect(), _folderIcon());
             
-            GUI.Label(_textRect(), Path.GetFileName(path), _labelSkin());
+            if (SettingsProvider.s_LabelOverride.Get<bool>())
+                GUI.Label(_textRect(), Path.GetFileName(path), _labelSkin());
 
             GUI.color = Color.white;
             
@@ -137,13 +138,13 @@ namespace HueFolders
             {
                 if (s_labelSelected == null)
                 {
-                    s_labelSelected                  = new GUIStyle(GUI.skin.label);
+                    s_labelSelected                  = new GUIStyle("Label");
                     s_labelSelected.normal.textColor = Color.white;
                     s_labelSelected.hover.textColor  = s_labelSelected.normal.textColor;
                 }
                 if (s_labelNormal == null)
                 {
-                    s_labelNormal                  = new GUIStyle(GUI.skin.label);
+                    s_labelNormal                  = new GUIStyle("Label");
                     s_labelNormal.normal.textColor = EditorGUIUtility.isProSkin ? new Color32(175, 175, 175, 255) : new Color32(2, 2, 2, 255);
                     s_labelNormal.hover.textColor  = s_labelNormal.normal.textColor;
                 }

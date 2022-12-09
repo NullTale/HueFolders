@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -19,16 +20,17 @@ namespace HueFolders
         public static  EditorOption s_InTreeViewOnly         = new EditorOption(nameof(HueFolders) + "_InTreeViewOnly");
         private const  bool         k_InTreeViewOnly_Default = true;
         
-        
         public static  EditorOption s_FoldersTint           = new EditorOption(nameof(HueFolders) + "_FoldersTint");
         private static Color        k_FoldersTint_Default   = Color.white;
-        
         
         public static  EditorOption s_SubFoldersTint         = new EditorOption(nameof(HueFolders) + "_SubFoldersTint");
         private static Color        k_SubFoldersTint_Default = new Color(1, 1, 1, 0.7f);
         
         public static  EditorOption s_GradientScale          = new EditorOption(nameof(HueFolders) + "_GradientScale");
         private static Vector2      k_GradientScale_Default  = new Vector2(0.536f, 1f);
+        
+        public static  EditorOption s_LabelOverride         = new EditorOption(nameof(HueFolders) + "_LabelOverride");
+        private const  bool         k_LabelOverride_Default = true;
         
         public static Dictionary<string, FolderData> s_FoldersDataDic;
         public static Color                          s_FoldersDefaultTint;
@@ -158,6 +160,16 @@ namespace HueFolders
                 else
                     EditorPrefs.SetString(_key, JsonUtility.ToJson(val));
             }
+            
+            public void OnGui<T>(Func<T, T> draw)
+            {
+                EditorGUI.BeginChangeCheck();
+                
+                var val = draw(Get<T>());
+                
+                if (EditorGUI.EndChangeCheck())
+                    Write(val);
+            }
         }
         
         // =======================================================================
@@ -204,6 +216,7 @@ namespace HueFolders
             s_SubFoldersTint.Setup(k_SubFoldersTint_Default);
             s_GradientScale.Setup(k_GradientScale_Default);
             s_FoldersTint.Setup(k_FoldersTint_Default);
+            s_LabelOverride.Setup(k_LabelOverride_Default);
 
             _updateGradient();
             EditorApplication.projectWindowItemOnGUI += HueFoldersBrowser.FolderColorization;
@@ -238,6 +251,7 @@ namespace HueFolders
             var foldersTint    = EditorGUILayout.ColorField("Folders Tint", s_FoldersTint.Get<Color>());
             var subFoldersTint = EditorGUILayout.ColorField("Sub Folders Tint", s_SubFoldersTint.Get<Color>());
             var gradientScale  = s_GradientScale.Get<Vector2>(); 
+            s_LabelOverride.OnGui<bool>( val => EditorGUILayout.Toggle("Label Override", val));
             EditorGUILayout.MinMaxSlider("Gradient Scale", ref gradientScale.x, ref gradientScale.y, 0f, 1f);
             
             if (EditorGUI.EndChangeCheck())
